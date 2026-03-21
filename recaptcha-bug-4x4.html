@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>reCAPTCHA — Bug Verify</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;background:#f1f3f4;display:flex;align-items:center;justify-content:center;font-family:Roboto,sans-serif}
+.card{width:306px;background:#fff;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,.18),0 1px 2px rgba(0,0,0,.1);overflow:hidden;position:relative}
+.hdr{background:#4a90d9;padding:11px 13px 12px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.hd{flex:1}.hi{font-size:11.5px;color:rgba(255,255,255,.88);margin-bottom:1px}
+.hm{font-size:24px;font-weight:700;color:#fff;line-height:1.05;letter-spacing:-.4px;margin-bottom:3px}
+.hs{font-size:10.5px;color:rgba(255,255,255,.72);font-style:italic}
+.hico{width:58px;height:58px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.grid{display:grid;grid-template-columns:repeat(4,75px);gap:2px;background:#444;border-top:2px solid #444;border-bottom:2px solid #444;width:306px}
+.cell{position:relative;width:75px;height:75px;background:#1e1e1e;cursor:pointer;overflow:hidden}
+.cell::after{content:'';position:absolute;inset:0;border:3px solid transparent;transition:border-color .08s;pointer-events:none;z-index:3}
+.cell.sel::after{border-color:#4a90d9}
+.ct{position:absolute;inset:0;background:rgba(74,144,217,.2);opacity:0;transition:opacity .1s;z-index:2;pointer-events:none}
+.cell.sel .ct{opacity:1}
+.ck{position:absolute;bottom:3px;right:3px;width:18px;height:18px;background:#4a90d9;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:4;opacity:0;transform:scale(.3);transition:opacity .12s,transform .18s cubic-bezier(.34,1.56,.64,1);pointer-events:none}
+.cell.sel .ck{opacity:1;transform:scale(1)}
+.ck svg{width:10px;height:10px;fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.cd{position:absolute;font-family:'JetBrains Mono',monospace;font-size:6px;line-height:1.5;color:#d4d4d4;padding:3px 4px;width:302px;white-space:pre;user-select:none;pointer-events:none;z-index:1;background:#1e1e1e}
+.ftr{display:flex;align-items:center;padding:7px 9px;background:#f9f9f9;border-top:1px solid #e0e0e0;gap:2px}
+.ib{width:36px;height:36px;border:none;background:transparent;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.ib:hover{background:rgba(0,0,0,.07)}.ib svg{width:18px;height:18px;fill:#5f6368}
+.sp{flex:1}
+.sk{padding:0 20px;height:36px;background:#4a90d9;color:#fff;border:none;border-radius:4px;font-family:Roboto,sans-serif;font-size:13px;font-weight:500;letter-spacing:.04em;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.22);text-transform:uppercase;min-width:72px}
+.sk:hover{background:#3d84cc}.sk:active{background:#2e72b8}
+.ov{position:absolute;inset:0;background:rgba(255,255,255,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;z-index:20;opacity:0;pointer-events:none;transition:opacity .22s;border-radius:4px}
+.ov.show{opacity:1;pointer-events:all}
+.oi{font-size:44px;animation:pop .35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+.ot{font-size:17px;font-weight:700;color:#202124;text-align:center}
+.om{font-size:12px;color:#5f6368;text-align:center;line-height:1.55;padding:0 22px}
+.oa{display:flex;gap:8px;margin-top:6px}
+.ba{padding:0 18px;height:36px;border-radius:4px;font-family:Roboto,sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .14s}
+.ba.o{background:transparent;color:#4a90d9;border:1px solid #dadce0}.ba.o:hover{background:#f1f3f4}
+.ba.fl{background:#4a90d9;color:#fff;border:none}.ba.fl:hover{background:#3d84cc}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.shake{animation:shake .35s ease}
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="ov" id="ov">
+    <div class="oi" id="oi"></div>
+    <div class="ot" id="ot"></div>
+    <div class="om" id="om"></div>
+    <div class="oa">
+      <button class="ba o" onclick="reset()">Thử lại</button>
+      <button class="ba fl" id="bc" onclick="reset()" style="display:none">Tiếp tục &rarr;</button>
+    </div>
+  </div>
+  <div class="hdr">
+    <div class="hd">
+      <div class="hi">Chọn tất cả ô có</div>
+      <div class="hm">bugs</div>
+      <div class="hs">Nếu không có, nhấn skip</div>
+    </div>
+    <div class="hico">
+      <svg width="58" height="58" viewBox="0 0 64 64" fill="none">
+        <ellipse cx="32" cy="38" rx="13" ry="15" fill="white"/>
+        <circle cx="32" cy="21" r="8" fill="white"/>
+        <line x1="26.5" y1="14" x2="19" y2="7" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="37.5" y1="14" x2="45" y2="7" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="19" cy="7" r="2" fill="white"/><circle cx="45" cy="7" r="2" fill="white"/>
+        <line x1="19" y1="31" x2="7" y2="26" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+        <line x1="19" y1="38" x2="6" y2="38" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+        <line x1="20" y1="45" x2="8" y2="50" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+        <line x1="45" y1="31" x2="57" y2="26" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+        <line x1="45" y1="38" x2="58" y2="38" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+        <line x1="44" y1="45" x2="56" y2="50" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="28.5" cy="21" r="2.2" fill="#4a90d9"/>
+        <circle cx="35.5" cy="21" r="2.2" fill="#4a90d9"/>
+        <line x1="32" y1="27" x2="32" y2="51" stroke="#4a90d9" stroke-width="1.5" stroke-dasharray="3,2.5"/>
+      </svg>
+    </div>
+  </div>
+  <div class="grid" id="g"></div>
+  <div class="ftr">
+    <button class="ib" onclick="reset()"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
+    <button class="ib"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+    <button class="ib"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></button>
+    <div class="sp"></div>
+    <button class="sk" id="sk">SKIP</button>
+  </div>
+</div>
+<script>
+const BUGS=new Set([1,6,9,14]),CS_W=75,CS_H=75;
+let sel=new Set();
+const CODE="<span style=\"color:#569cd6\">var</span> <span style=\"color:#9cdcfe\">_0x6675</span> <span style=\"color:#d4d4d4\">=</span> [<span style=\"color:#ce9178\">'getElementById'</span>,<span style=\"color:#ce9178\">'innerHTML'</span>,<span style=\"color:#ce9178\">'style'</span>,<span style=\"color:#ce9178\">'display'</span>,\n  <span style=\"color:#ce9178\">'block'</span>,<span style=\"color:#ce9178\">'none'</span>,<span style=\"color:#ce9178\">'onclick'</span>,<span style=\"color:#ce9178\">'===</span> <span style=\"color:#6a9955\">/* bug 1 */</span> + <span style=\"color:#ce9178\">''</span>,<span style=\"color:#ce9178\">'submit'</span>,<span style=\"color:#ce9178\">'length'</span>,<span style=\"color:#ce9178\">'value'</span>,\n  <span style=\"color:#ce9178\">'querySelector'</span>,<span style=\"color:#ce9178\">'disabled'</span>,<span style=\"color:#ce9178\">'checked'</span>,<span style=\"color:#ce9178\">'getAttribute'</span>,<span style=\"color:#ce9178\">'src'</span>,<span style=\"color:#ce9178\">'href'</span>,\n  <span style=\"color:#ce9178\">'classList'</span>,<span style=\"color:#ce9178\">'add'</span>,<span style=\"color:#ce9178\">'remove'</span>,<span style=\"color:#ce9178\">'contains'</span>,<span style=\"color:#ce9178\">'toggle'</span>,<span style=\"color:#ce9178\">'parentNode'</span>,\n  <span style=\"color:#ce9178\">'addEventListener'</span>,<span style=\"color:#ce9178\">'DOMContentLoaded'</span>,<span style=\"color:#ce9178\">'createElement'</span>,<span style=\"color:#ce9178\">'appendChild'</span>,\n  <span style=\"color:#ce9178\">'textContent'</span>,<span style=\"color:#ce9178\">'dataset'</span>,<span style=\"color:#ce9178\">'forEach'</span>,<span style=\"color:#ce9178\">'indexOf'</span>,<span style=\"color:#ce9178\">'includes'</span>,<span style=\"color:#ce9178\">'replace'</span>];\n<span style=\"color:#569cd6\">function</span> <span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x4f8b</span>) {\n  <span style=\"color:#c586c0\">return</span> <span style=\"color:#9cdcfe\">document</span>[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">0</span>]](<span style=\"color:#9cdcfe\">_0x4f8b</span>);\n}\n<span style=\"color:#569cd6\">function</span> <span style=\"color:#dcdcaa\">launch</span>() {\n  <span style=\"color:#569cd6\">var</span> <span style=\"color:#9cdcfe\">_0x2391x6</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#b5cea8\">0</span>; <span style=\"color:#569cd6\">var</span> <span style=\"color:#9cdcfe\">file</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">5</span>]; <span style=\"color:#569cd6\">var</span> <span style=\"color:#9cdcfe\">_prev</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#569cd6\">null</span>;\n  <span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">10</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">1</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">15</span>]; <span style=\"color:#9cdcfe\">_0x2391x6</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#b5cea8\">0</span>;\n  <span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">17</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">2</span>]][<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">3</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">16</span>];\n  (<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">21</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">20</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">22</span>] <span style=\"color:#d4d4d4\">-</span> <span style=\"color:#9cdcfe\">file</span> <span style=\"color:#d4d4d4\">-</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">21</span>];\n  <span style=\"color:#9cdcfe\">_prev</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">curr</span>; <span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">24</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">13</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">11</span>];\n  <span style=\"color:#dcdcaa\">setInterval</span>(<span style=\"color:#569cd6\">function</span>() { <span style=\"color:#569cd6\">if</span> (<span style=\"color:#9cdcfe\">_0x2391x6</span> <span style=\"color:#d4d4d4\">==</span> <span style=\"color:#b5cea8\">0</span>) { <span style=\"color:#9cdcfe\">_0x2391x6</span>++; }\n    <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">30</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">1</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">22</span>] <span style=\"color:#d4d4d4\">+</span> <span style=\"color:#9cdcfe\">file</span> <span style=\"color:#d4d4d4\">+</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">25</span>];\n    <span style=\"color:#569cd6\">if</span> (<span style=\"color:#9cdcfe\">_0x2391x7</span> <span style=\"color:#d4d4d4\">==</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">26</span>]) { <span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">14</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">13</span>]]\n      <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">27</span>]; <span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">18</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">17</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">6</span>];\n      <span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">21</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">20</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">11</span>]; } }, <span style=\"color:#b5cea8\">10000</span>);\n  <span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">21</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">20</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">22</span>] <span style=\"color:#d4d4d4\">+</span> <span style=\"color:#9cdcfe\">file</span>;\n  <span style=\"color:#9cdcfe\">_0x2391x6</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#b5cea8\">1</span>; <span style=\"color:#9cdcfe\">_prev</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">11</span>]; <span style=\"color:#dcdcaa\">clearInfo</span>(); <span style=\"color:#9cdcfe\">_0x2391x8</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#b5cea8\">0</span>;\n  <span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">24</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">13</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">29</span>]; <span style=\"color:#9cdcfe\">_0x2391x9</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#b5cea8\">0</span>;\n  } <span style=\"color:#569cd6\">else</span> { <span style=\"color:#dcdcaa\">clearInterval</span>(); <span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">30</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">1</span>]]\n    <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">22</span>] <span style=\"color:#d4d4d4\">+</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">31</span>]; <span style=\"color:#9cdcfe\">_0x2391x6</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#b5cea8\">0</span>; <span style=\"color:#9cdcfe\">_prev</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#569cd6\">null</span>; }\n  }, <span style=\"color:#b5cea8\">10000</span>);\n}\n<span style=\"color:#569cd6\">function</span> <span style=\"color:#dcdcaa\">showInfo</span>(<span style=\"color:#9cdcfe\">_0x2391x9</span>) {\n  <span style=\"color:#9cdcfe\">_prev</span> <span style=\"color:#d4d4d4\">=</span> (<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">31</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">13</span>]]; <span style=\"color:#9cdcfe\">_0x2391x9</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">32</span>];\n  <span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">31</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">13</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">32</span>] <span style=\"color:#d4d4d4\">+</span> <span style=\"color:#9cdcfe\">_0x2391x9</span> <span style=\"color:#d4d4d4\">+</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">5</span>];\n  <span style=\"color:#9cdcfe\">curr</span> <span style=\"color:#d4d4d4\">=</span> (<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">31</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">13</span>]]; <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">33</span>] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x2391x9</span>;\n  <span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">14</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">1</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">27</span>]; <span style=\"color:#9cdcfe\">_0x2391x6</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#b5cea8\">0</span>;\n  <span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">24</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">2</span>]][<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">3</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">4</span>]; <span style=\"color:#9cdcfe\">_0x2391x9</span>++;\n  <span style=\"color:#569cd6\">if</span> (<span style=\"color:#9cdcfe\">_0x2391x9</span> <span style=\"color:#d4d4d4\">>=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">30</span>].<span style=\"color:#9cdcfe\">length</span>) { <span style=\"color:#9cdcfe\">_0x2391x9</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x2391x9</span> <span style=\"color:#d4d4d4\">+</span> <span style=\"color:#b5cea8\">1</span>; }\n  <span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">34</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">13</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#9cdcfe\">_0x2391x9</span>][<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">35</span>]];\n  (<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">31</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">13</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">32</span>] <span style=\"color:#d4d4d4\">+</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">5</span>] <span style=\"color:#d4d4d4\">+</span> <span style=\"color:#9cdcfe\">curr</span>;\n  <span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">21</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">1</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x2391x9</span> <span style=\"color:#d4d4d4\">+</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">22</span>]; }\n}\n<span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">4</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">24</span>]](<span style=\"color:#9cdcfe\">file</span>, <span style=\"color:#9cdcfe\">launch</span>); <span style=\"color:#9cdcfe\">_0x2391x6</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#b5cea8\">0</span>;\n<span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">7</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">24</span>]](<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">5</span>], <span style=\"color:#9cdcfe\">showInfo</span>); <span style=\"color:#9cdcfe\">_prev</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#569cd6\">null</span>;\n<span style=\"color:#dcdcaa\">_0x2391</span>(<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">11</span>])[<span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">1</span>]] <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">22</span>]; <span style=\"color:#9cdcfe\">curr</span> <span style=\"color:#d4d4d4\">=</span> <span style=\"color:#9cdcfe\">_0x6675</span>[<span style=\"color:#b5cea8\">5</span>];";
+function updateBtn(){document.getElementById('sk').textContent=sel.size?'VERIFY':'SKIP';}
+function build(){
+  const g=document.getElementById('g');
+  g.innerHTML='';sel.clear();updateBtn();
+  for(let r=0;r<4;r++)for(let c=0;c<4;c++){
+    const idx=r*4+c,el=document.createElement('div');
+    el.className='cell';
+    el.innerHTML='<div class="ct"></div><pre class="cd" style="top:'+-r*CS_H+'px;left:'+-c*CS_W+'px">'+CODE+'</pre><div class="ck"><svg viewBox="0 0 16 16"><polyline points="3,8 7,12 13,4"/></svg></div>';
+    el.onclick=()=>{sel.has(idx)?(sel.delete(idx),el.classList.remove('sel')):(sel.add(idx),el.classList.add('sel'));updateBtn();};
+    g.appendChild(el);
+  }
+}
+function showResult(pass,skipped){
+  const[oi,ot,om,bc]=['oi','ot','om','bc'].map(id=>document.getElementById(id));
+  if(pass){oi.textContent='✅';ot.style.color='#188038';ot.textContent='Xác minh thành công!';om.textContent='Tìm đúng 4 ô bug. Chào mừng đến DevLearn! 🎉';bc.style.display='inline-flex';}
+  else if(skipped){oi.textContent='⚠️';ot.style.color='#e37400';ot.textContent='Có bug trong code!';om.textContent='Vẫn còn 4 ô chứa bug. Hãy tìm và chọn trước khi xác nhận.';bc.style.display='none';shake();}
+  else{const missed=[...BUGS].filter(i=>!sel.has(i)).length,wrong=[...sel].filter(i=>!BUGS.has(i)).length;oi.textContent='❌';ot.style.color='#c5221f';ot.textContent='Xác minh thất bại';om.textContent='Bỏ sót '+missed+' bug'+(wrong?', chọn nhầm '+wrong+' ô sạch':'')+'.';bc.style.display='none';shake();}
+  document.getElementById('ov').classList.add('show');
+}
+function shake(){const c=document.getElementById('card');c.classList.add('shake');setTimeout(()=>c.classList.remove('shake'),400);}
+function reset(){document.getElementById('ov').classList.remove('show');setTimeout(build,180);}
+document.getElementById('sk').onclick=()=>{
+  if(sel.size)showResult([...sel].every(i=>BUGS.has(i))&&[...BUGS].every(i=>sel.has(i)),false);
+  else showResult(false,true);
+};
+build();
+</script>
+</body>
+</html>
